@@ -41,6 +41,7 @@ import org.mule.runtime.core.api.config.bootstrap.ArtifactType;
 import org.mule.runtime.core.internal.connectivity.DefaultConnectivityTestingService;
 import org.mule.runtime.core.internal.metadata.MuleMetadataService;
 import org.mule.runtime.core.internal.value.MuleValueProviderService;
+import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -83,6 +84,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
     super(muleContext, artifactConfigResources, artifactDeclaration, optionalObjectsController, artifactProperties,
           artifactType, pluginsClassLoaders, parentConfigurationProperties, disableXmlValidations);
     this.applicationModel.executeOnEveryMuleComponentTree(componentModel -> componentModel.setEnabled(false));
+    enableEagerComponents();
 
     muleContext.getCustomizationService().overrideDefaultServiceImpl(CONNECTIVITY_TESTING_SERVICE_KEY,
                                                                      new LazyConnectivityTestingService(this, () -> getRegistry()
@@ -207,6 +209,8 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
       });
     }
     applicationModel.executeOnEveryMuleComponentTree(componentModel -> componentModel.setEnabled(false));
+    enableEagerComponents();
+
     // Refresh componentLocator
     removeFromComponentLocator(beanNames);
   }
@@ -217,4 +221,15 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
     });
   }
 
+  private void enableEagerComponents() {
+    this.applicationModel.executeOnEveryComponentTree(componentModel -> {
+      Optional<ComponentBuildingDefinition<?>> buildingDefinition =
+          this.componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier());
+      buildingDefinition.ifPresent(definition -> {
+        if (definition.isAlwaysEnabled()) {
+          componentModel.setEnabled(true);
+        }
+      });
+    });
+  }
 }
