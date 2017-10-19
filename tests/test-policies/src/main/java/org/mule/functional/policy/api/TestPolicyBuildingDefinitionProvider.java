@@ -45,6 +45,7 @@ public class TestPolicyBuildingDefinitionProvider implements ComponentBuildingDe
                                        fromChildConfiguration(PolicyChain.class).withWrapperIdentifier("source").build())
         .withSetterParameterDefinition("operationPolicyChain",
                                        fromChildConfiguration(PolicyChain.class).withWrapperIdentifier("operation").build())
+        .asPrototype()
         .build());
 
     definitions.add(baseDefinition.withIdentifier("source")
